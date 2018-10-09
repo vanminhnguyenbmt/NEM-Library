@@ -60,6 +60,34 @@ var downloadWallet = function (wallet) {
     fs.writeFileSync(fullPath, wallet.writeWLTFile());
     console.log("Downloaded wallet to " + fullPath);
 };
+var loadWallet = function () {
+    var contents = fs.readFileSync(PATH_WALLET);
+    return nem_library_1.SimpleWallet.readFromWLT(contents);
+};
+var openWallet = function (wallet) {
+    return new Promise(function (resolve, reject) {
+        prompts.message = 'wallet login';
+        prompts.start();
+        prompts.get({
+            properties: {
+                password: {
+                    description: 'Password',
+                    hidden: true
+                }
+            }
+        }, function (_, result) {
+            var pass = new nem_library_1.Password(result.password);
+            try {
+                resolve(wallet.open(pass));
+            }
+            catch (err) {
+                console.log("" + err);
+                console.log('Please try again');
+                reject();
+            }
+        });
+    });
+};
 var createWallet = function () {
     console.log('\nPlease enter a unique password (8 character minimum).\n' +
         'This password will be used to encrypt your private key and make working with your wallet easier\n' +
@@ -95,13 +123,22 @@ var createWallet = function () {
     });
 };
 var main = function () { return __awaiter(_this, void 0, void 0, function () {
+    var wallet, account;
     return __generator(this, function (_a) {
-        if (args[0] === 'wallet') {
-            if (args[1] === 'create') {
-                createWallet();
-            }
+        switch (_a.label) {
+            case 0:
+                if (args[0] === 'wallet') {
+                    if (args[1] === 'create') {
+                        createWallet();
+                    }
+                }
+                wallet = loadWallet();
+                return [4 /*yield*/, openWallet(wallet)];
+            case 1:
+                account = _a.sent();
+                console.log(account);
+                return [2 /*return*/];
         }
-        return [2 /*return*/];
     });
 }); };
 main();

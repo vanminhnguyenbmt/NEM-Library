@@ -1,5 +1,5 @@
 import { MOSAIC_NAME, createSimpleWallet } from "../src";
-import { Password, SimpleWallet } from "nem-library";
+import { Password, SimpleWallet, Account } from "nem-library";
 
 const fs = require('fs');
 const os = require('os');
@@ -13,7 +13,7 @@ const PATH_WALLET = `${PATH_HOME}/${MOSAIC_NAME}-wallet.wlt`;
 
 const downloadWallet = (wallet: SimpleWallet) => {
     console.log('\nDownloading wallet for your covenience.\n' +
-        'Please store someplace safe. The private key is encrypted by your password.\n' + 
+        'Please store someplace safe. The private key is encrypted by your password.\n' +
         'To load this wallet on a new computer you would simply import the .wlt file' +
         ' into this app and enter your password and you will be able to sign transactions');
 
@@ -27,7 +27,36 @@ const downloadWallet = (wallet: SimpleWallet) => {
     }
     fs.writeFileSync(fullPath, wallet.writeWLTFile());
     console.log(`Downloaded wallet to ${fullPath}`);
-    
+
+};
+
+const loadWallet = (): SimpleWallet => {
+    const contents = fs.readFileSync(PATH_WALLET);
+    return SimpleWallet.readFromWLT(contents);
+};
+
+const openWallet = (wallet: SimpleWallet): Promise<Account> => {
+    return new Promise<Account>((resolve, reject) => {
+        prompts.message = 'wallet login';
+        prompts.start();
+        prompts.get({
+            properties: {
+                password: {
+                    description: 'Password',
+                    hidden: true
+                }
+            }
+        }, (_, result: any) => {
+            const pass = new Password(result.password);
+            try {
+                resolve(wallet.open(pass));
+            } catch (err) {
+                console.log(`${err}`);
+                console.log('Please try again');
+                reject();
+            }
+        })
+    });
 };
 
 const createWallet = () => {
@@ -70,6 +99,10 @@ const main = async () => {
             createWallet();
         }
     }
+
+    const wallet = loadWallet();
+    const account = await openWallet(wallet);
+    console.log(account);
 };
 
 main();
