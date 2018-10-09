@@ -37,8 +37,29 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
 var _this = this;
 Object.defineProperty(exports, "__esModule", { value: true });
 var src_1 = require("../src");
+var nem_library_1 = require("nem-library");
+var fs = require('fs');
+var os = require('os');
 var prompts = require('prompt');
 var args = process.argv.slice(2);
+var PATH_HOME = os.homedir() + "/" + src_1.MOSAIC_NAME + "-wallets-dev";
+var PATH_WALLET = PATH_HOME + "/" + src_1.MOSAIC_NAME + "-wallet.wlt";
+var downloadWallet = function (wallet) {
+    console.log('\nDownloading wallet for your covenience.\n' +
+        'Please store someplace safe. The private key is encrypted by your password.\n' +
+        'To load this wallet on a new computer you would simply import the .wlt file' +
+        ' into this app and enter your password and you will be able to sign transactions');
+    if (!fs.existsSync(PATH_HOME)) {
+        fs.mkdirSync(PATH_HOME);
+    }
+    var fullPath = PATH_WALLET;
+    if (fs.existsSync(fullPath)) {
+        var stamp = new Date().toDateString();
+        fullPath = PATH_HOME + "/" + stamp + "-" + src_1.MOSAIC_NAME + "-wallet.wlt";
+    }
+    fs.writeFileSync(fullPath, wallet.writeWLTFile());
+    console.log("Downloaded wallet to " + fullPath);
+};
 var createWallet = function () {
     console.log('\nPlease enter a unique password (8 character minimum).\n' +
         'This password will be used to encrypt your private key and make working with your wallet easier\n' +
@@ -63,7 +84,13 @@ var createWallet = function () {
         }
         else {
             var wallet = src_1.createSimpleWallet(result.password);
-            console.log(wallet);
+            var pass = new nem_library_1.Password(result.password);
+            var account = wallet.open(pass);
+            var address = account.address.pretty();
+            console.log(src_1.MOSAIC_NAME + " wallet successfully created\n");
+            console.log("You can now start sending and receiving " + src_1.MOSAIC_NAME + "\n");
+            console.log("Public Address: " + address);
+            downloadWallet(wallet);
         }
     });
 };
